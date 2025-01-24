@@ -44,7 +44,7 @@ func TestServer(t *testing.T) {
 			messageChans := make([]chan messages.Message, numberOfClients)
 			conns := make([]net.Conn, numberOfClients)
 			for i := 0; i < numberOfClients; i++ {
-				c, conn, err := client.Subscribe("engine")
+				c, conn, err := client.Subscribe("engine", &messages.EngineMessage{})
 				if err != nil {
 					t.FailNow()
 				}
@@ -120,7 +120,7 @@ func BenchmarkServer(b *testing.B) {
 	messageChans := make([]chan messages.Message, numberOfClients)
 	conns := make([]net.Conn, numberOfClients)
 	for i := 0; i < numberOfClients; i++ {
-		c, conn, err := client.Subscribe("engine")
+		c, conn, err := client.Subscribe("engine", &messages.EngineMessage{})
 		if err != nil {
 			b.FailNow()
 		}

@@ -28,7 +28,7 @@ func (psc *PubSubClient) clean(messageChan chan messages.Message, conn net.Conn)
 	conn.Close()
 }
 
-func (psc *PubSubClient) Subscribe(topic string) (chan messages.Message, net.Conn, error) {
+func (psc *PubSubClient) Subscribe(topic string, value messages.Message) (chan messages.Message, net.Conn, error) {
 	conn, err := psc.connect()
 	if err != nil {
 		return nil, nil, err
@@ -45,11 +45,10 @@ func (psc *PubSubClient) Subscribe(topic string) (chan messages.Message, net.Con
 		defer psc.clean(messageChan, conn)
 		decoder := json.NewDecoder(conn)
 		for {
-			engineMessage := &messages.EngineMessage{}
-			if err := decoder.Decode(engineMessage); err != nil {
+			if err := decoder.Decode(value); err != nil {
 				break
 			}
-			messageChan <- engineMessage
+			messageChan <- value
 		}
 	}(conn)
 	return messageChan, conn, nil
