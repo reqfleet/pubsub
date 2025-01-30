@@ -29,12 +29,12 @@ func NewPubSubServer(mode ServerMode) *PubSubServer {
 	}
 }
 
-func (s *PubSubServer) Broadcast(topic string, message messages.Message) {
-	s.broker.Broadcast(topic, message)
+func (s *PubSubServer) Broadcast(topic string, message messages.Message) error {
+	return s.broker.Broadcast(topic, message)
 }
 
-func (s *PubSubServer) Roundrobin(topic string, message messages.Message) {
-	s.broker.Roundrobin(topic, message)
+func (s *PubSubServer) Roundrobin(topic string, message messages.Message) error {
+	return s.broker.Roundrobin(topic, message)
 }
 
 func (s *PubSubServer) handleClient(conn net.Conn, decoder *json.Decoder) {

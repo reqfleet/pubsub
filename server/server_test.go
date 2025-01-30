@@ -37,7 +37,7 @@ func TestServer(t *testing.T) {
 	cases := []struct {
 		name             string
 		expectedMessages int
-		sendFunc         func(topic string, message messages.Message)
+		sendFunc         func(topic string, message messages.Message) error
 	}{
 		{
 			name:             "broadcast",
