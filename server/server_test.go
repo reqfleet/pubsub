@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"encoding/json"
-	"log"
 	"net"
 	"testing"
 	"time"
@@ -53,7 +52,6 @@ func TestServer(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			time.Sleep(4 * time.Second)
 			messageChans := make([]chan messages.Message, numberOfClients)
 			conns := make([]net.Conn, numberOfClients)
 			for i := 0; i < numberOfClients; i++ {
@@ -63,7 +61,6 @@ func TestServer(t *testing.T) {
 				}
 				messageChans[i] = c
 				conns[i] = conn
-
 			}
 			timer := time.NewTimer(2 * time.Second)
 			<-timer.C
@@ -114,17 +111,8 @@ func TestServer(t *testing.T) {
 }
 
 func BenchmarkServer(b *testing.B) {
-	startServer := func() *server.PubSubServer {
-		server := server.NewPubSubServer(server.TCP)
-		go func() {
-			if err := server.Listen(); err != nil {
-				log.Fatal(err)
-			}
-		}()
-		return server
-	}
-	ps := startServer()
-
+	server := server.NewPubSubServer(server.TCP)
+	go server.Listen()
 	client := &client.PubSubClient{
 		Addr: "localhost:2416",
 	}
@@ -151,7 +139,7 @@ func BenchmarkServer(b *testing.B) {
 	m := &EngineMessage{Verb: "start"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ps.Broadcast("engine", m)
+		server.Broadcast("engine", m)
 	}
 	for _, conn := range conns {
 		conn.Close()
