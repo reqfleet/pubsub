@@ -1,9 +1,5 @@
 package messages
 
-import (
-	"encoding/json"
-)
-
 /*
 reqfleet is having a coordinatoir and engine design.
 coordinator and engines are communicated via pubsub through TCP.
@@ -31,28 +27,4 @@ type Message interface {
 
 	// For debugging purposes
 	String() string
-}
-
-type EngineMessage struct {
-	Verb string `json:"verb"`
-}
-
-func (em EngineMessage) ToJSON() ([]byte, error) {
-	return json.Marshal(em)
-}
-
-func (em EngineMessage) String() string {
-	return em.Verb
-}
-
-type TestMessage struct {
-	Non string `json:"non"`
-}
-
-func (tm TestMessage) ToJSON() ([]byte, error) {
-	return json.Marshal(tm)
-}
-
-func (tm TestMessage) String() string {
-	return tm.Non
 }

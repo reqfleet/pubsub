@@ -28,11 +28,11 @@ func NewPubSubServer(mode ServerMode) *PubSubServer {
 	}
 }
 
-func (s *PubSubServer) Broadcast(topic string, message []byte) {
+func (s *PubSubServer) Broadcast(topic string, message messages.Message) {
 	s.broker.Broadcast(topic, message)
 }
 
-func (s *PubSubServer) Roundrobin(topic string, message []byte) {
+func (s *PubSubServer) Roundrobin(topic string, message messages.Message) {
 	s.broker.Roundrobin(topic, message)
 }
 

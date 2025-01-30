@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"testing"
@@ -10,6 +11,18 @@ import (
 	"github.com/reqfleet/pubsub/messages"
 	"github.com/reqfleet/pubsub/server"
 )
+
+type EngineMessage struct {
+	Verb string `json:"verb"`
+}
+
+func (em EngineMessage) ToJSON() ([]byte, error) {
+	return json.Marshal(em)
+}
+
+func (em EngineMessage) String() string {
+	return em.Verb
+}
 
 func TestServer(t *testing.T) {
 	server := server.NewPubSubServer(server.TCP)
@@ -25,7 +38,7 @@ func TestServer(t *testing.T) {
 	cases := []struct {
 		name             string
 		expectedMessages int
-		sendFunc         func(topic string, message []byte)
+		sendFunc         func(topic string, message messages.Message)
 	}{
 		{
 			name:             "broadcast",
@@ -44,7 +57,7 @@ func TestServer(t *testing.T) {
 			messageChans := make([]chan messages.Message, numberOfClients)
 			conns := make([]net.Conn, numberOfClients)
 			for i := 0; i < numberOfClients; i++ {
-				c, conn, err := client.Subscribe("engine", &messages.EngineMessage{})
+				c, conn, err := client.Subscribe("engine", &EngineMessage{})
 				if err != nil {
 					t.FailNow()
 				}
@@ -79,9 +92,8 @@ func TestServer(t *testing.T) {
 				}(c)
 			}
 			for i := 0; i < numberOfMessages; i++ {
-				m := &messages.EngineMessage{Verb: "Start"}
-				message, _ := m.ToJSON()
-				tc.sendFunc("engine", message)
+				m := &EngineMessage{Verb: "Start"}
+				tc.sendFunc("engine", m)
 			}
 			k := 0
 			for i := range messageReceived {
@@ -120,7 +132,7 @@ func BenchmarkServer(b *testing.B) {
 	messageChans := make([]chan messages.Message, numberOfClients)
 	conns := make([]net.Conn, numberOfClients)
 	for i := 0; i < numberOfClients; i++ {
-		c, conn, err := client.Subscribe("engine", &messages.EngineMessage{})
+		c, conn, err := client.Subscribe("engine", &EngineMessage{})
 		if err != nil {
 			b.FailNow()
 		}
@@ -136,11 +148,10 @@ func BenchmarkServer(b *testing.B) {
 			}
 		}(c)
 	}
-	m := &messages.EngineMessage{Verb: "start"}
-	message, _ := m.ToJSON()
+	m := &EngineMessage{Verb: "start"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ps.Broadcast("engine", message)
+		ps.Broadcast("engine", m)
 	}
 	for _, conn := range conns {
 		conn.Close()

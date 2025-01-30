@@ -7,6 +7,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/reqfleet/pubsub/messages"
 )
 
 type queueitem struct {
@@ -146,34 +148,44 @@ func (b *Broker) RemoveClient(topic string, conn net.Conn) {
 	log.Println("Client disconnected from", conn.RemoteAddr())
 }
 
-func (b *Broker) Broadcast(topic string, message []byte) {
+func (b *Broker) Broadcast(topic string, msg messages.Message) error {
 	b.mu.RLock()
 	clients := b.clients[topic]
 	if clients == nil {
 		b.mu.RUnlock()
-		return
+		return nil
+	}
+	message, err := msg.ToJSON()
+	if err != nil {
+		return err
 	}
 	for e := clients.Front(); e != nil; e = e.Next() {
 		conn := e.Value.(net.Conn)
 		b.workerQueue <- queueitem{conn: conn, message: message, topic: topic}
 	}
 	b.mu.RUnlock()
+	return nil
 }
 
-func (b *Broker) Roundrobin(topic string, message []byte) {
+func (b *Broker) Roundrobin(topic string, msg messages.Message) error {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	clients := b.clients[topic]
 	if clients == nil {
-		return
+		return nil
 	}
 	ele := clients.Front()
 	if ele == nil {
-		return
+		return nil
+	}
+	message, err := msg.ToJSON()
+	if err != nil {
+		return err
 	}
 	conn := ele.Value.(net.Conn)
 	clients.MoveToBack(ele)
 	b.workerQueue <- queueitem{conn: conn, message: message, topic: topic}
+	return nil
 }
 
 func (b *Broker) NumberOfClients(topic string) int {
