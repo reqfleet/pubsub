@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/reqfleet/pubsub/broker"
@@ -68,7 +69,7 @@ func (s *PubSubServer) HandleConnection(conn net.Conn) {
 }
 
 func (s *PubSubServer) Listen() error {
-	listener, err := net.Listen("tcp", ":2416")
+	listener, err := net.Listen(strings.ToLower(string(s.Mode)), ":2416")
 	if err != nil {
 		log.Println("Error starting server:", err)
 		return err
