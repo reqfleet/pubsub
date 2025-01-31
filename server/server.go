@@ -18,14 +18,21 @@ const (
 )
 
 type PubSubServer struct {
-	broker *broker.Broker
-	Mode   ServerMode
+	broker   *broker.Broker
+	Mode     ServerMode
+	Password string
 }
 
-func NewPubSubServer(mode ServerMode) *PubSubServer {
+type ServerOpts struct {
+	Mode     ServerMode
+	Password string
+}
+
+func NewPubSubServer(opts ServerOpts) *PubSubServer {
 	return &PubSubServer{
-		broker: broker.NewBroker(broker.BrokerConfig{WorkerNum: 10, GCInterval: 10 * time.Second}),
-		Mode:   mode,
+		broker:   broker.NewBroker(broker.BrokerConfig{WorkerNum: 10, GCInterval: 10 * time.Second}),
+		Mode:     opts.Mode,
+		Password: opts.Password,
 	}
 }
 
@@ -43,6 +50,10 @@ func (s *PubSubServer) handleClient(conn net.Conn, decoder *json.Decoder) {
 		return
 	}
 	tt := topic.Name
+	if topic.Password != s.Password {
+		conn.Close()
+		return
+	}
 	s.broker.AddClient(topic.Name, conn)
 	for {
 		if err := decoder.Decode(topic); err != nil {

@@ -9,7 +9,8 @@ import (
 )
 
 type PubSubClient struct {
-	Addr string
+	Addr     string
+	Password string
 }
 
 func (psc *PubSubClient) connect() (net.Conn, error) {
@@ -34,7 +35,8 @@ func (psc *PubSubClient) Subscribe(topic string, value messages.Message) (chan m
 		return nil, nil, err
 	}
 	t := &messages.Topic{
-		Name: topic,
+		Name:     topic,
+		Password: psc.Password,
 	}
 	encoder := json.NewEncoder(conn)
 	if err := encoder.Encode(t); err != nil {

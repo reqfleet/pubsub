@@ -24,13 +24,28 @@ func (em EngineMessage) String() string {
 }
 
 func TestServer(t *testing.T) {
-	server := server.NewPubSubServer(server.TCP)
+	opts := server.ServerOpts{
+		Mode:     server.TCP,
+		Password: "asdf",
+	}
+	server := server.NewPubSubServer(opts)
 	go server.Listen()
 
 	client := &client.PubSubClient{
 		Addr: "localhost:2416",
 	}
-
+	brokenChan, conn, _ := client.Subscribe("test", &EngineMessage{})
+	for range brokenChan {
+	}
+	_, err := conn.Write([]byte("a"))
+	if err == nil {
+		t.Error("Connection should be closed")
+		return
+	}
+	if server.NumberOfClients("test") > 0 {
+		t.Error("Should have not clients")
+		return
+	}
 	numberOfClients := 500
 	numberOfMessages := 30
 
@@ -50,6 +65,7 @@ func TestServer(t *testing.T) {
 			sendFunc:         server.Roundrobin,
 		},
 	}
+	client.Password = opts.Password
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			messageChans := make([]chan messages.Message, numberOfClients)
@@ -111,7 +127,11 @@ func TestServer(t *testing.T) {
 }
 
 func BenchmarkServer(b *testing.B) {
-	server := server.NewPubSubServer(server.TCP)
+	opts := server.ServerOpts{
+		Mode:     server.TCP,
+		Password: "asdf",
+	}
+	server := server.NewPubSubServer(opts)
 	go server.Listen()
 	client := &client.PubSubClient{
 		Addr: "localhost:2416",

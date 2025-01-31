@@ -18,7 +18,8 @@ So it's better to define specific message types based on the communication needs
 */
 
 type Topic struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	Password string `json:"api_key"`
 }
 
 type Message interface {
