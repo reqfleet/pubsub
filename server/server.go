@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net"
@@ -18,9 +19,11 @@ const (
 )
 
 type PubSubServer struct {
-	broker   *broker.Broker
-	Mode     ServerMode
-	Password string
+	broker     *broker.Broker
+	Mode       ServerMode
+	Password   string
+	ctx        context.Context
+	cancelFunc context.CancelFunc
 }
 
 type ServerOpts struct {
@@ -61,6 +64,7 @@ func (s *PubSubServer) handleClient(conn net.Conn, decoder *json.Decoder) {
 			break
 		}
 	}
+
 }
 
 func (s *PubSubServer) NumberOfClients(topic string) int {
@@ -86,18 +90,31 @@ func (s *PubSubServer) Listen() error {
 		return err
 	}
 	log.Println("PubSub server started on port 2416")
-	defer listener.Close()
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Println("Error accepting connection:", err)
-			continue
+	stopCtx, stopCancel := context.WithCancel(context.Background())
+	s.ctx = stopCtx
+	s.cancelFunc = stopCancel
+	go func() {
+		for {
+			select {
+			case <-stopCtx.Done():
+				listener.Close()
+				return
+			default:
+				conn, err := listener.Accept()
+				if err != nil {
+					log.Println("Error accepting connection:", err)
+					continue
+				}
+				go s.HandleConnection(conn)
+			}
 		}
-		go s.HandleConnection(conn)
-	}
+	}()
+	return nil
 }
 
 func (s *PubSubServer) Shutdown() {
-	// TODO stop the socket listening as well
+	log.Println("Going to shut down the server...")
+	s.cancelFunc()
 	s.broker.Close()
+	log.Println("Server is gracefully closed.")
 }
